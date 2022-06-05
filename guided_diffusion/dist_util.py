@@ -7,7 +7,6 @@ import os
 import socket
 
 import blobfile as bf
-from mpi4py import MPI
 import torch as th
 import torch.distributed as dist
 
@@ -32,20 +31,16 @@ def setup_dist():
         hostname = "localhost"
     else:
         hostname = socket.gethostbyname(socket.getfqdn())
-    # os.environ["MASTER_ADDR"] = comm.bcast(hostname, root=0)
-    # os.environ["RANK"] = str(comm.rank)
-    # os.environ["WORLD_SIZE"] = str(comm.size)
-
-    # port = comm.bcast(_find_free_port(), root=0)
-    # os.environ["MASTER_PORT"] = str(port)
-    # master_addr = os.environ["MASTER_ADDR"]
     master_addr = os.getenv("MASTER_ADDR", "127.0.0.1")
-    # master_port = os.environ["MASTER_PORT"]
     master_port = os.getenv("MASTER_PORT", "29400")
-    # rank = os.environ["RANK"]
     rank = os.getenv("RANK", 0)
-    # world_size = os.environ["WORLD_SIZE"]
     world_size = os.getenv("WORLD_SIZE", 1)
+
+    os.environ["MASTER_ADDR"] = master_addr
+    os.environ["MASTER_PORT"] = master_port
+    os.environ["RANK"] = str(rank)
+    os.environ["WORLD_SIZE"] = str(world_size)
+
     print(f"MASTER_ADDR: {master_addr}")
     print(f"MASTER_PORT: {master_port}")
     print(f"RANK: {rank}")

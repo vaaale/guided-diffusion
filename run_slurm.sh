@@ -6,8 +6,8 @@ script_root="$(dirname "$0")"
 source $script_root/env.sh
 
 
-RUNPATH=/storage/Python/improved-diffusion/
-cd $RUNPATH || echo "Unable to cd into $RUNPATH";exit
+RUNPATH=/storage/Python/guided-diffusion/
+cd $RUNPATH
 source /storage/Python/DiffusionModelTest/.venv/bin/activate
 
 export RANK=${SLURM_NODEID}

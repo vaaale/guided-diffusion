@@ -78,6 +78,8 @@ def create_argparser():
         fp16_scale_growth=1e-3,
     )
     defaults.update(model_and_diffusion_defaults())
+    print("Default arguments:")
+    print(defaults)
     parser = argparse.ArgumentParser()
     add_dict_to_argparser(parser, defaults)
     return parser
@@ -87,8 +89,6 @@ if __name__ == "__main__":
     print("Initializing....")
     log_file = f"/storage/runs/{socket.gethostname()}_log.txt"
     print(f"Writing log to {log_file}")
-
     out = open(log_file, "w")
     sys.stdout = out
-
     main()
