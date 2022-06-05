@@ -108,7 +108,7 @@ class TrainLoop:
             self.ddp_model = self.model
 
     def _load_and_sync_parameters(self):
-        resume_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
+        resume_checkpoint = find_resume_checkpoint(self.resume_checkpoint) or (self.resume_checkpoint and not os.path.isdir(self.resume_checkpoint))
 
         if resume_checkpoint:
             self.resume_step = parse_resume_step_from_filename(resume_checkpoint)
@@ -125,7 +125,7 @@ class TrainLoop:
     def _load_ema_parameters(self, rate):
         ema_params = copy.deepcopy(self.mp_trainer.master_params)
 
-        main_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
+        main_checkpoint = find_resume_checkpoint(self.resume_checkpoint) or (self.resume_checkpoint and not os.path.isdir(self.resume_checkpoint))
         ema_checkpoint = find_ema_checkpoint(main_checkpoint, self.resume_step, rate)
         if ema_checkpoint:
             if dist.get_rank() == 0:
@@ -139,7 +139,7 @@ class TrainLoop:
         return ema_params
 
     def _load_optimizer_state(self):
-        main_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
+        main_checkpoint = find_resume_checkpoint(self.resume_checkpoint) or (self.resume_checkpoint and not os.path.isdir(self.resume_checkpoint))
         opt_checkpoint = bf.join(
             bf.dirname(main_checkpoint), f"opt{self.resume_step:06}.pt"
         )
@@ -276,10 +276,17 @@ def get_blob_logdir():
     return logger.get_dir()
 
 
-def find_resume_checkpoint():
+def find_resume_checkpoint(log_dir):
     # On your infrastructure, you may want to override this to automatically
     # discover the latest checkpoint on your blob storage, etc.
-    return None
+    if not os.path.isdir(log_dir):
+        return None
+    else:
+        latest = sorted(map(lambda f: (parse_resume_step_from_filename(f), f), filter(lambda f: "model" in f, os.listdir(log_dir))), key=lambda x: x[0], reverse=True)
+        if latest:
+            return os.path.join(log_dir, latest[0][1])
+        else:
+            return None
 
 
 def find_ema_checkpoint(main_checkpoint, step, rate):

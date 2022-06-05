@@ -14,10 +14,14 @@ from guided_diffusion.script_util import (
     add_dict_to_argparser,
 )
 from guided_diffusion.train_util import TrainLoop
+import socket
+import sys
 
 
 def main():
     args = create_argparser().parse_args()
+    print(f"Args: {args}")
+    print(f"Args: {args.__doc__}")
 
     dist_util.setup_dist()
     logger.configure()
@@ -68,7 +72,7 @@ def create_argparser():
         microbatch=-1,  # -1 disables microbatches
         ema_rate="0.9999",  # comma-separated list of EMA values
         log_interval=10,
-        save_interval=10000,
+        save_interval=100,
         resume_checkpoint="",
         use_fp16=False,
         fp16_scale_growth=1e-3,
@@ -80,4 +84,11 @@ def create_argparser():
 
 
 if __name__ == "__main__":
+    print("Initializing....")
+    log_file = f"/storage/runs/{socket.gethostname()}_log.txt"
+    print(f"Writing log to {log_file}")
+
+    out = open(log_file, "w")
+    sys.stdout = out
+
     main()

@@ -18,6 +18,7 @@ from guided_diffusion.script_util import (
     add_dict_to_argparser,
     args_to_dict,
 )
+from guided_diffusion.train_util import find_resume_checkpoint
 
 
 def main():
@@ -25,6 +26,15 @@ def main():
 
     dist_util.setup_dist()
     logger.configure()
+
+    if os.path.isdir(args.model_path):
+        latest = find_resume_checkpoint(args.model_path)
+        print(f"Latest model is: {latest}")
+        if not latest:
+            latest = args.model_path
+    else:
+        latest = args.model_path
+
 
     logger.log("creating model and diffusion...")
     model, diffusion = create_model_and_diffusion(
@@ -71,6 +81,12 @@ def main():
             dist.all_gather(gathered_labels, classes)
             all_labels.extend([labels.cpu().numpy() for labels in gathered_labels])
         logger.log(f"created {len(all_images) * args.batch_size} samples")
+        if dist.get_rank() == 0:
+            arr = np.concatenate(all_images, axis=0)
+            arr = arr[: args.num_samples]
+            shape_str = "x".join([str(x) for x in arr.shape])
+            out_path = os.path.join(logger.get_dir(), f"samples_{shape_str}.npz")
+            np.savez(out_path, arr)
 
     arr = np.concatenate(all_images, axis=0)
     arr = arr[: args.num_samples]
